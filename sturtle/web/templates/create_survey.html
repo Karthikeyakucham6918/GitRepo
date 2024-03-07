@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Edit' if survey else 'Create' }} Survey</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="my-4">{{ 'Edit' if survey else 'Create' }} Survey</h1>
+
+    <form id="survey-form" action="/api/v1/survey{{ '/' + survey.id if survey }}" method="{{ 'put' if survey else 'post' }}">
+
+        {% if survey %}
+            <div class="form-group">
+                <label for="survey_id">Survey ID:</label>
+                <input type="text" class="form-control" id="survey_id" name="survey_id"
+                       value="{{ survey.id if survey }}" readonly>
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" class="form-control" id="name" name="name"
+                   value="{{ survey.name if survey }}">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" class="form-control" id="description" name="description"
+                   value="{{ survey.description if survey }}">
+        </div>
+
+        <div class="form-group">
+            <label for="prompt">Prompt:</label>
+            <textarea type="text" class="form-control" id="prompt" name="prompt" rows="10">{{ survey.prompt if survey }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">{{ 'Update' if survey else 'Create' }}</button>
+    </form>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#survey-form').on('submit', function(e) {
+        e.preventDefault();
+
+        var form = $(this);
+        var url = form.attr('action');
+
+        // Create a JavaScript object from the form data
+        var data = {
+            name: form.find('input[name="name"]').val(),
+            description: form.find('input[name="description"]').val(),
+            prompt: form.find('textarea[name="prompt"]').val(),
+            files: []
+        };
+
+        // Convert the JavaScript object to a JSON string
+        var jsonData = JSON.stringify(data);
+
+        $.ajax({
+            type: "{{ 'PUT' if survey else 'POST' }}",
+            url: url,
+            data: jsonData,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function(data)
+            {
+                window.location.href = '/www/surveys';
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

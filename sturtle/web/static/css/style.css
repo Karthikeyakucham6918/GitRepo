@@ -1,0 +1,48 @@
+/* CSS for larger screens */
+body {
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+}
+
+/* CSS for mobile screens */
+@media only screen and (max-width: 600px) {
+    body {
+        font-size: 18px;
+    }
+
+    .container {
+        width: 100%;
+    }
+}
+
+#input-field {
+    resize: vertical;  /* Allow vertical resizing only */
+}
+
+.light-text {
+    color: #ccc; !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0;}
+    to { opacity: 1;}
+}
+
+@keyframes fadeOut {
+    from { opacity: 1;}
+    to { opacity: 0;}
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-in-out;
+}

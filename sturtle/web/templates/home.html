@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- Add Bootstrap JS and its dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  window.location.href = "/www/surveys";
+
+  document.getElementById('add-option').addEventListener('click', function () {
+    var options = document.getElementById('options');
+    var newOption = document.createElement('input');
+    newOption.type = 'text';
+    newOption.className = 'form-control mt-2 option-input';
+    options.appendChild(newOption);
+
+    // Add a remove button for the new option
+    var removeButton = document.createElement('button');
+    removeButton.textContent = '-';
+    removeButton.className = 'btn btn-danger ml-2';
+    removeButton.type = 'button';
+    removeButton.addEventListener('click', function () {
+      options.removeChild(newOption);
+      options.removeChild(removeButton);
+    });
+    options.appendChild(removeButton);
+  });
+
+  document.getElementById('question-form').addEventListener('submit', function () {
+    var optionInputs = document.getElementsByClassName('option-input');
+    var options = [];
+    for (var i = 0; i < optionInputs.length; i++) {
+      options.push(encodeURIComponent(optionInputs[i].value));
+    }
+    document.getElementById('options-input').value = options.join(',');
+  });
+</script>
+</body>
+</html>

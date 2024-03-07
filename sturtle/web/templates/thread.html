@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ survey.name | capitalize }}</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+
+    <!-- Add custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+</head>
+<body>
+<div id="survey" class="container">
+    <div class="card mb-3 mt-3">
+        <div class="card-body" style="height: 80vh;">
+            <h2>{{ survey.name }}</h2>
+            <p>{{ survey.description }}</p>
+            <div id="survey-container" class="d-flex justify-content-center">
+                <div id="buttons">
+                    <button id="start-button">Start Survey</button>
+                    <button id="test-question" style="display: none;">debug question</button>
+                    <button id="test-interstitial" style="display: none;">debug interstitial</button>
+                    <button id="test-summary" style="display: none;">debug summary</button>
+                </div>
+                <div id="question-frame" class="container">
+                </div>
+            </div>
+            <div class="d-flex justify-content-center">
+                <div class="container" id="loading-spinner" style="display: none;">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<template id="question-template">
+    <div id="chat" class="mb-3 mt-5">
+        <div id="chat-message"></div>
+    </div>
+    <form class="fade-in">
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="container-fluid hstack gap-1">
+                    <label class="question-text mb-1"></label>
+                    <button id="switch-button" class="switch-input btn btn-outline-primary me-2 ms-auto"
+                            type="button">
+                        <i class="bi bi-chat-left-text"></i>
+                    </button>
+                    <button class="skip-button btn btn-outline-primary me-2" type="button">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="container" id="radio-input">
+                    <ul class="options-list list-group"></ul>
+                </div>
+
+                <div class="container" id="text-input">
+                    <label for="input-field">Your Answer</label>
+                    <textarea id="input-field" class="form-control" rows="5"></textarea>
+                </div>
+            </div>
+
+            <div class="container text-end mb-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-square"></i>
+                    Continue
+                </button>
+            </div>
+            <h5 id="question-name" class="position-absolute bottom-0 start-0 ms-3 light-text"></h5>
+        </div>
+
+    </form>
+</template>
+
+<template id="option-template">
+    <li class="list-group-item">
+        <input class="option-input form-check-input me-1" type="radio" name="option"/>
+        <label class="option-label form-check-label stretched-link"></label>
+    </li>
+</template>
+
+<template id="summary-template">
+    <div id="chat" class="mb-3 mt-5">
+        <div id="chat-message"></div>
+    </div>
+    <div id="summary" class="mb-3 mt-5">
+        <ul id="summary-list" class="list-group">
+            <!-- List items will be added here dynamically from JavaScript -->
+        </ul>
+    </div>
+</template>
+
+<template id="response-template">
+    <li class="list-group-item">
+        <h5 class="question-text"></h5>
+        <p class="response-text"></p>
+        <p class="remarks"></p>
+    </li>
+</template>
+
+<!-- Add Bootstrap JS and its dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+<script>
+  const questionFrame = document.getElementById('question-frame');
+
+  function sendMessage(message) {
+
+    let form = questionFrame.querySelector('form');
+    form.classList.add('fade-out');
+    //Remove the form from the DOM after 300ms
+    setTimeout(function () {
+      form.remove();
+    }, 300);
+
+    //show the spinner
+    spinner.style.display = 'block';
+
+    console.log("Sending message: ", message, " to thread: ", thread_id)
+
+    // Dispatch an API call
+    fetch(`/api/v1/thread/${thread_id}/message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        thread_id: thread_id,
+        message: message
+      })
+    })
+      .then(response => response.json())
+      .then(handleThreadMessage)
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+
+
+  function handleThreadMessage(data) {
+    spinner.style.display = 'none';
+    questionFrame.innerHTML = '';
+
+    if (thread_id === null)
+      thread_id = data['thread_id'];
+
+    if (data['messages'].length === 0) {
+      //No messages, show the buttons
+      buttons.style.display = 'block';
+      thread_id = null;
+      return;
+    }
+
+    let chat_message = '';
+
+    for (let i = 0; i < data['messages'].length; i++) {
+      let obj = data['messages'][i];
+
+      if (obj['type'] === 'message') {
+        //Memoize the chat message
+        chat_message += obj['message'] + '\n';
+      } else if (obj['type'] === 'question') {
+        //Render question
+        let model = {
+          chat_message: chat_message.trim(),
+          question: obj
+        };
+        createQuestionView(model);
+
+        chat_message = '';
+      } else if (obj['type'] === 'response_list') {
+        //Render summary
+        let model = obj;
+        obj['chat_message'] = chat_message.trim();
+
+        console.log(model);
+        createSummaryView(model);
+        chat_message = '';
+      }
+    }
+    if (chat_message !== '') {
+      let model = {
+        chat_message: chat_message.trim(),
+        question: {
+          id: '',
+          question: '',
+          options: []
+        }
+      };
+      createQuestionView(model);
+    }
+
+  }
+
+
+  const survey_id = '{{ survey_id }}';
+  const spinner = document.getElementById('loading-spinner');
+  let thread_id = null;
+
+  const buttons = document.getElementById('buttons');
+
+  const testQuestionButton = document.getElementById('test-question');
+  testQuestionButton.addEventListener('click', function () {
+    // Hide buttons
+    buttons.style.display = 'none';
+    spinner.style.display = 'block';
+
+    // Dispatch an API call
+    fetch('/api/v1/thread/test/response_question.json', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => response.json())
+      .then(handleThreadMessage)
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+
+  const testInterstitialButton = document.getElementById('test-interstitial');
+  testInterstitialButton.addEventListener('click', function () {
+    // Hide buttons
+    buttons.style.display = 'none';
+    spinner.style.display = 'block';
+
+    // Dispatch an API call
+    fetch('/api/v1/thread/test/response_interstitial.json', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => response.json())
+      .then(handleThreadMessage)
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+
+  const testSummaryButton = document.getElementById('test-summary');
+  testSummaryButton.addEventListener('click', function () {
+    // Hide buttons
+    buttons.style.display = 'none';
+    spinner.style.display = 'block';
+
+    // Dispatch an API call
+    fetch('/api/v1/thread/test/response_summary.json', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => response.json())
+      .then(handleThreadMessage)
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+
+  //If the querystring includes debug, show the debug buttons
+  if (window.location.search.includes('debug')) {
+    testQuestionButton.style.display = 'block';
+    testInterstitialButton.style.display = 'block';
+    testSummaryButton.style.display = 'block';
+  }
+
+  // Get the start button
+  const startButton = document.getElementById('start-button');
+  // Hook the start button to an event listener
+  startButton.addEventListener('click', function () {
+    // Hide buttons
+    buttons.style.display = 'none';
+    spinner.style.display = 'block';
+
+    thread_id = null;
+
+    // Dispatch an API call
+    fetch('/api/v1/thread', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        survey_id: survey_id
+      })
+    })
+      .then(response => response.json())
+      .then(handleThreadMessage)
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+
+  function createSummaryView(summary) {
+    // Get the template
+    const template = document.getElementById('summary-template').content.cloneNode(true);
+
+    // Get the list to populate
+    const list = template.getElementById('summary-list');
+
+    // Populate the list
+    for (const item of summary['responses']) {
+      // Get the response template
+      const responseTemplate = document.getElementById('response-template').content.cloneNode(true);
+
+      // Populate the response template with the response data
+      responseTemplate.querySelector('.question-text').textContent = item.question;
+      responseTemplate.querySelector('.response-text').textContent = `Response: ${item.response_text}`;
+      if (item.remarks !== undefined)
+        responseTemplate.querySelector('.remarks').textContent = `Remarks: ${item.remarks}`;
+      else
+        responseTemplate.querySelector('.remarks').textContent = '';
+
+      // Append the populated response template to the list
+      list.appendChild(document.importNode(responseTemplate, true));
+    }
+
+    // Add the populated template to the DOM
+    questionFrame.appendChild(document.importNode(template, true));
+  }
+
+  // Function to create a view from the question model data
+  function createQuestionView(questionModel) {
+    // Select the template element
+    let templateElement = document.getElementById('question-template').content.cloneNode(true);
+
+    // Populate the template with the question model data
+    templateElement.querySelector('#chat-message').innerText = questionModel.chat_message;
+    templateElement.querySelector('.question-text').innerText = questionModel.question.question;
+    templateElement.querySelector('#question-name').innerText = questionModel.question.id;
+
+    if (questionModel.question.options.length > 0) {
+      // Populate the options
+      let optionsList = templateElement.querySelector('.options-list');
+      questionModel.question.options.forEach((option, index) => {
+        let optionTemplate = document.getElementById('option-template').content.cloneNode(true);
+        optionTemplate.querySelector('.option-input').value = option;
+        optionTemplate.querySelector('.option-input').id = 'option' + index;
+        optionTemplate.querySelector('.option-label').innerText = option;
+        optionTemplate.querySelector('.option-label').htmlFor = 'option' + index;
+        optionsList.appendChild(optionTemplate);
+      });
+    }
+
+    // Append the populated template to the desired location in the DOM
+    questionFrame.appendChild(templateElement);
+
+    // Get the continue button
+    const continueButton = questionFrame.querySelector('button[type="submit"]');
+    continueButton.addEventListener('click', function (event) {
+      event.preventDefault();
+      continueButton.disabled = true;
+
+      // If the inputbox is visible get the value from the input field otherwise get the value from the selected option
+      const inputField = questionFrame.querySelector('#input-field');
+      const inputBox = questionFrame.querySelector('#text-input');
+      const option = questionFrame.querySelector('input[name="option"]:checked');
+      const answer = inputBox.style.display === 'block' ? inputField.value : option.value;
+
+      sendMessage(answer);
+    });
+
+    const skipButton = questionFrame.querySelector('.skip-button');
+    skipButton.addEventListener('click', function (event) {
+      event.preventDefault();
+      skipButton.disabled = true;
+      sendMessage('Skip Question');
+    });
+
+    // Initially disable the continue button
+    continueButton.disabled = true;
+
+    // Get the switch button
+    const switchButton = questionFrame.querySelector('#switch-button');
+
+    // Get the options box and the text input box
+    const optionsBox = questionFrame.querySelector('#radio-input');
+    const inputBox = questionFrame.querySelector('#text-input');
+
+    // If the length of the options in the model is zero, disable the toggle button and show the text input
+    if (questionModel.question.options.length === 0) {
+      switchButton.disabled = true;
+      optionsBox.style.display = 'none';
+      inputBox.style.display = 'block';
+    } else {
+      // Otherwise, show the options and hide the text input by default
+      switchButton.disabled = false;
+      optionsBox.style.display = 'block';
+      inputBox.style.display = 'none';
+    }
+
+    // Add event listener to the option radio buttons
+    const optionRadios = questionFrame.querySelectorAll('input[name="option"]');
+    for (var i = 0; i < optionRadios.length; i++) {
+      optionRadios[i].addEventListener('change', function () {
+        // Enable the continue button when an option is selected
+        continueButton.disabled = false;
+      });
+    }
+
+    // Add event listener to the text input field
+    const inputField = questionFrame.querySelector('#input-field');
+    inputField.addEventListener('input', function () {
+      // Enable the continue button when text is entered
+      continueButton.disabled = this.value.trim() === '';
+    });
+
+    switchButton.addEventListener('click', function () {
+      if (optionsBox.style.display === 'none') {
+        optionsBox.style.display = 'block';
+        inputBox.style.display = 'none';
+        switchButton.innerHTML = '<i class="bi bi-chat-left-text"></i>';
+
+        // Deselect the options-list
+        const options = questionFrame.querySelectorAll('input[name="option"]');
+        for (let i = 0; i < options.length; i++) {
+          options[i].checked = false;
+        }
+
+        continueButton.disabled = true;
+      } else {
+        optionsBox.style.display = 'none';
+        inputBox.style.display = 'block';
+        switchButton.innerHTML = '<i class="bi bi-ui-radios"></i>';
+
+        const input = questionFrame.querySelector('#input-field');
+        if (questionFrame.querySelector('input[name="option"]:checked') !== null) {
+          input.value = questionFrame.querySelector('input[name="option"]:checked').value;
+        } else {
+          input.value = '';
+          continueButton.disabled = true;
+        }
+
+        const numberOfOptions = questionFrame.querySelectorAll('#options-list li').length;
+        input.setAttribute('rows', numberOfOptions);
+
+        input.focus();
+        input.select();
+      }
+    });
+  }
+
+
+</script>
+</body>
+</html>

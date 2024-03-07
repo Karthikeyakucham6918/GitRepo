@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ question.name | capitalize }}</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+
+    <!-- Add custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+</head>
+<body>
+<div class="container">
+    <div id="loading-spinner" class="spinner-border text-primary" style="display: none;"></div>
+    <div id="question-frame" class="container">
+
+    </div>
+</div>
+
+<template id="question-template">
+    <div id="chat" class="mb-3 mt-5">
+        <div id="chat-message"></div>
+    </div>
+    <form class="fade-in">
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="container-fluid hstack gap-1">
+                    <label class="question-text mb-1"></label>
+                    <button id="switch-button" class="switch-input btn btn-outline-primary me-2 ms-auto" type="button">
+                        <i class="bi bi-chat-left-text"></i>
+                    </button>
+                    <button class="skip-button btn btn-outline-primary me-2" type="button">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="container" id="radio-input">
+                    <ul class="options-list list-group"></ul>
+                </div>
+
+                <div class="container" id="text-input">
+                    <label for="input-field">Your Answer</label>
+                    <textarea id="input-field" class="form-control" rows="5"></textarea>
+                </div>
+            </div>
+
+            <div class="container text-end mb-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-square"></i>
+                    Continue
+                </button>
+            </div>
+            <h5 id="question-name" class="position-absolute bottom-0 start-0 ms-3 light-text"></h5>
+        </div>
+
+    </form>
+</template>
+
+<template id="option-template">
+    <li class="list-group-item">
+        <input class="option-input form-check-input me-1" type="radio" name="option"/>
+        <label class="option-label form-check-label stretched-link"></label>
+    </li>
+</template>
+
+<!-- Add Bootstrap JS and its dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+<script>
+
+  // Get the question model data
+  let questionModelData = {
+    question: {{ question | tojson | safe }},
+    chat_message: {{ chat_message | tojson | safe }}
+  };
+
+  const spinner = document.getElementById('loading-spinner');
+
+  // Function to create a view from the question model data
+  function createQuestionView(questionModel) {
+    // Select the template element
+    let templateElement = document.getElementById('question-template').content.cloneNode(true);
+
+    // Populate the template with the question model data
+    templateElement.querySelector('#chat-message').innerText = questionModel.chat_message;
+    templateElement.querySelector('.question-text').innerText = questionModel.question.text;
+    templateElement.querySelector('#question-name').innerText = questionModel.question.name;
+
+    // Populate the options
+    let optionsList = templateElement.querySelector('.options-list');
+    questionModel.question.options.forEach((option, index) => {
+      let optionTemplate = document.getElementById('option-template').content.cloneNode(true);
+      optionTemplate.querySelector('.option-input').value = option;
+      optionTemplate.querySelector('.option-input').id = 'option' + index;
+      optionTemplate.querySelector('.option-label').innerText = option;
+      optionTemplate.querySelector('.option-label').htmlFor = 'option' + index;
+      optionsList.appendChild(optionTemplate);
+    });
+
+    // Append the populated template to the desired location in the DOM
+    let questionFrame = document.getElementById('question-frame');
+    questionFrame.appendChild(templateElement);
+    const form = questionFrame.querySelector('form');
+
+    // Get the continue button
+    const continueButton = questionFrame.querySelector('button[type="submit"]');
+
+    continueButton.addEventListener('click', function (event) {
+      event.preventDefault();
+      form.classList.add('fade-out');
+      //show the spinner
+      spinner.style.display = 'block';
+
+      // Dispatch an API call
+      fetch('/api/v1/thread', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          // Your data here
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          // Handle the response data
+          // Hide the spinner
+          spinner.style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    });
+
+    // Initially disable the continue button
+    continueButton.disabled = true;
+
+    // Get the switch button
+    const switchButton = questionFrame.querySelector('#switch-button');
+
+    // Get the options box and the text input box
+    const optionsBox = questionFrame.querySelector('#radio-input');
+    const inputBox = questionFrame.querySelector('#text-input');
+
+    // If the length of the options in the model is zero, disable the toggle button and show the text input
+    if (questionModel.question.options.length === 0) {
+      switchButton.disabled = true;
+      optionsBox.style.display = 'none';
+      inputBox.style.display = 'block';
+    } else {
+      // Otherwise, show the options and hide the text input by default
+      switchButton.disabled = false;
+      optionsBox.style.display = 'block';
+      inputBox.style.display = 'none';
+    }
+
+    // Add event listener to the option radio buttons
+    const optionRadios = questionFrame.querySelectorAll('input[name="option"]');
+    for (var i = 0; i < optionRadios.length; i++) {
+      optionRadios[i].addEventListener('change', function () {
+        // Enable the continue button when an option is selected
+        continueButton.disabled = false;
+      });
+    }
+
+    // Add event listener to the text input field
+    const inputField = questionFrame.querySelector('#input-field');
+    inputField.addEventListener('input', function () {
+      // Enable the continue button when text is entered
+      continueButton.disabled = this.value.trim() === '';
+    });
+
+    switchButton.addEventListener('click', function () {
+      if (optionsBox.style.display === 'none') {
+        optionsBox.style.display = 'block';
+        inputBox.style.display = 'none';
+        switchButton.innerHTML = '<i class="bi bi-chat-left-text"></i>';
+
+        // Deselect the options-list
+        const options = questionFrame.querySelectorAll('input[name="option"]');
+        for (let i = 0; i < options.length; i++) {
+          options[i].checked = false;
+        }
+
+        continueButton.disabled = true;
+      } else {
+        optionsBox.style.display = 'none';
+        inputBox.style.display = 'block';
+        switchButton.innerHTML = '<i class="bi bi-ui-radios"></i>';
+
+        const input = questionFrame.querySelector('#input-field');
+        if (questionFrame.querySelector('input[name="option"]:checked') !== null) {
+          input.value = questionFrame.querySelector('input[name="option"]:checked').value;
+        } else {
+          input.value = '';
+          continueButton.disabled = true;
+        }
+
+        const numberOfOptions = questionFrame.querySelectorAll('#options-list li').length;
+        input.setAttribute('rows', numberOfOptions);
+
+        input.focus();
+        input.select();
+      }
+    });
+  }
+
+  // Call the function with the question model data
+  createQuestionView(questionModelData);
+
+</script>
+</body>
+</html>

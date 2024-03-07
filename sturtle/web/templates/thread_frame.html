@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ survey.name }}</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<div id="survey" class="container">
+    <div class="card mb-3 mt-3">
+        <div class="card-body" style="height: 80vh;">
+            <h2>{{ survey.name }}</h2>
+            <p>{{ survey.description }}</p>
+            <div id="survey-container" class="d-flex justify-content-center">
+                <iframe id="survey-frame" href="/www/thread"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

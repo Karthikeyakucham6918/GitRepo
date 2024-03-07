@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-5">{{ title }}</h1>
+
+    <!-- A form that will post to /render_question -->
+    <form action="/www/render_question" method="post" class="mt-4" id="question-form">
+        <!--        <input type="hidden" name="survey_id" value="0">-->
+        <!--        <input type="hidden" name="question_id" value="0">-->
+        <!--        <input type="hidden" name="thread_id" value="0">-->
+
+
+        <div class="form-group">
+            <label for="chat_message">Chat Message</label>
+            <input type="text" name="chat_message" id="chat_message" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="name">Question Name</label>
+            <input type="text" name="name" id="name" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="text">Question Text</label>
+            <input type="text" name="text" id="text" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="options">Options</label>
+            <div id="options">
+                <!-- Start with an empty list of options -->
+            </div>
+            <button type="button" id="add-option" class="btn btn-success mt-2">+</button>
+        </div>
+        <!-- Hidden input field to store the options string -->
+        <input type="hidden" name="options" id="options-input">
+        <input type="submit" value="Submit Question" class="btn btn-primary">
+    </form>
+</div>
+<!-- Add Bootstrap JS and its dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.getElementById('add-option').addEventListener('click', function () {
+    var options = document.getElementById('options');
+    var newOption = document.createElement('input');
+    newOption.type = 'text';
+    newOption.className = 'form-control mt-2 option-input';
+    options.appendChild(newOption);
+
+    // Add a remove button for the new option
+    var removeButton = document.createElement('button');
+    removeButton.textContent = '-';
+    removeButton.className = 'btn btn-danger ml-2';
+    removeButton.type = 'button';
+    removeButton.addEventListener('click', function () {
+      options.removeChild(newOption);
+      options.removeChild(removeButton);
+    });
+    options.appendChild(removeButton);
+  });
+
+  document.getElementById('question-form').addEventListener('submit', function () {
+    var optionInputs = document.getElementsByClassName('option-input');
+    var options = [];
+    for (var i = 0; i < optionInputs.length; i++) {
+      options.push(encodeURIComponent(optionInputs[i].value));
+    }
+    document.getElementById('options-input').value = options.join(',');
+  });
+</script>
+</body>
+</html>

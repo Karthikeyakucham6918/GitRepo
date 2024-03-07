@@ -1,0 +1,13 @@
+[
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": {
+          "value": "Thank you for participating in this survey. Your feedback is valuable as it helps to understand employee engagement and the effectiveness of our weekly all-hands meetings. Today, we would like to hear your thoughts on the presentations from the recent meeting where project Thunderbird and Clothiers Box were presented.\n\n### How informative did you find Dave M.'s presentation on project Thunderbird? {#q1}\n*Please select an option.*\n1. Not informative at all\n2. Somewhat informative but lacking details\n3. Adequately informative\n4. Very informative with good details\n5. Exceptionally informative with thorough details and clear explanations\n6. Other (please specify)"
+        }
+      }
+    ],
+    "thread_id": "debug-1"
+  }
+]

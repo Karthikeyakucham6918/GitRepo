@@ -1,0 +1,13 @@
+[
+  {
+    "content": [
+      {
+        "type": "text" ,
+        "text": {
+          "value": "Absolutely, let's review your responses from today's survey:\n\n> ### How engaged did you feel during the all-hands meeting this week? {#q1}\n> - response: 1\n> - response_text: Not engaged at all\n> - **remarks:** User felt not engaged during the meeting.\n\n> ### How relevant did you find the presentation of project Thunderbird to your work? {#q2}\n> - response: 1\n> - response_text: Not relevant at all\n> - **remarks:** User found the presentation of project Thunderbird not relevant to their work.\n\n> ### What was your impression of the presentation style of project Thunderbird? {#q3}\n> - response: 1\n> - response_text: Very unengaging\n> - **remarks:** User did not find the presentation style of project Thunderbird engaging.\n\n> ### How would you rate the clarity of the presentation for Clothiers Box by Christen B.? {#q4}\n> - response: 1\n> - response_text: Very unclear\n> - **remarks:** User found the presentation very unclear.\n\n> ### How likely are you to use the information provided in the all-hands meeting in your own work? {#q5}\n> - response: 1\n> - response_text: Not likely at all\n> - **remarks:** User is not likely to use the information presented in their own work.\n\nIf you'd like to make any changes or provide further clarity on any of your responses, feel free to let me know. Otherwise, your feedback has been incredibly helpful and will be used to improve future all-hands meetings. Thank you for participating, and if you have any other comments or wish to revisit the survey at another time, you're more than welcome to do so. Have a great day!"
+        }
+      }
+    ],
+    "thread_id": "debug-1"
+  }
+]
