@@ -16,7 +16,7 @@ from sturtle.db import get_db
 from sturtle.db.models import Survey
 
 load_dotenv()
-client = OpenAI()
+client = OpenAI(api_key = "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")
 
 router = APIRouter(tags=["API", "Thread"], prefix="/api/v1")
 
